@@ -5,7 +5,9 @@ import { storeJSON } from "@/lib/zerog-storage";
 import { addEntry, type Entry } from "@/lib/store";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+// Vercel Hobby caps serverless functions at 60s. Broker-mode TEE inference +
+// 0G Storage upload must fit inside this; router/demo modes are well under.
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   let body: any;

@@ -1,11 +1,14 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 
-// Lightweight local index of verdicts for the history feed. The *proof* of each
-// verdict lives on 0G (root hash + TEE signature); this file is only a
-// convenience index so the arena can list recent duels. Not a source of truth.
-const DIR = path.join(process.cwd(), ".data");
-const FILE = path.join(DIR, "history.json");
+// Lightweight index of recent verdicts for the arena feed. The *proof* of each
+// verdict lives on 0G (root hash + TEE signature); this is only a convenience
+// index. Designed to be serverless-safe: it keeps an in-memory cache and
+// best-effort persists to the OS temp dir (the only writable path on Vercel /
+// most serverless runtimes). It NEVER throws — a read-only filesystem just
+// means the feed lives in memory for the lifetime of the warm instance.
+const FILE = path.join(os.tmpdir(), "verdict-arena-history.json");
 
 export interface Entry {
   id: string;
@@ -27,27 +30,40 @@ export interface Entry {
   createdAt: string;
 }
 
-function ensure(): void {
-  if (!fs.existsSync(DIR)) fs.mkdirSync(DIR, { recursive: true });
-  if (!fs.existsSync(FILE)) fs.writeFileSync(FILE, "[]");
-}
+let mem: Entry[] = [];
+let loaded = false;
 
-export function list(): Entry[] {
-  ensure();
+function load(): void {
+  if (loaded) return;
+  loaded = true;
   try {
-    return JSON.parse(fs.readFileSync(FILE, "utf8"));
+    if (fs.existsSync(FILE)) mem = JSON.parse(fs.readFileSync(FILE, "utf8"));
   } catch {
-    return [];
+    mem = [];
   }
 }
 
+function persist(): void {
+  try {
+    fs.writeFileSync(FILE, JSON.stringify(mem, null, 2));
+  } catch {
+    // read-only filesystem (e.g. cold serverless instance) — keep in memory only.
+  }
+}
+
+export function list(): Entry[] {
+  load();
+  return mem;
+}
+
 export function addEntry(e: Entry): void {
-  ensure();
-  const all = list();
-  all.unshift(e);
-  fs.writeFileSync(FILE, JSON.stringify(all.slice(0, 100), null, 2));
+  load();
+  mem.unshift(e);
+  mem = mem.slice(0, 100);
+  persist();
 }
 
 export function get(id: string): Entry | null {
-  return list().find((e) => e.id === id) ?? null;
+  load();
+  return mem.find((e) => e.id === id) ?? null;
 }
