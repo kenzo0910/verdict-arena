@@ -1,0 +1,27 @@
+{
+  "name": "verdict-arena",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VerdictArena — a public arena where an AI judge renders verdicts on TEE-verifiable 0G Compute. Every verdict ships with a 'verify this judgment' proof.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "setup:ledger": "node scripts/setup-ledger.mjs"
+  },
+  "dependencies": {
+    "@0gfoundation/0g-compute-ts-sdk": "^0.8.4",
+    "@0gfoundation/0g-storage-ts-sdk": "^1.2.10",
+    "ethers": "6.13.1",
+    "next": "^14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.5.3"
+  }
+}
